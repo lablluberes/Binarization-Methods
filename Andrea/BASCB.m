@@ -176,7 +176,7 @@ function u = BASCB(x) %x is vector of time series measurements, sorted in
     vmed = median(v)
     vmed = round(vmed)
     
-    t = ((x(vmed)+1)+x(vmed))/2
+    t = (x(vmed+1)+x(vmed))/2
 
     %binarized vector calculation
 

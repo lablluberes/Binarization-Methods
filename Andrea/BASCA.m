@@ -9,8 +9,6 @@ n = length(x)
 
 
 %break point indexes
-%to do
-breakpointIndex = []
 
 %this is a matrix nxn-1
 
@@ -37,6 +35,7 @@ for j = 1:n-2
         end
         [cost, index] =  min(costsearch)
         C(i,j+1) = cost
+        %j instead of j+1 here because later ind(i,1) is accessed
         ind(i,j) = index
     end
 
@@ -126,17 +125,12 @@ end
 end
 
 
-function sum = C_ab(x,a,b)
+function val = C_ab(x,a,b)
     
-    sum = 0
 
     Y = Y_ab(x,a,b)
 
-    for i = a:b   
-        sum = sum + (x(i) - Y)^2
-    end
-
-    sum
+    val = sum((x(a:b)-Y).^2)
 
 end
 
