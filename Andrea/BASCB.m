@@ -10,11 +10,13 @@ function u = BASCB(x) %x is vector of time series measurements, sorted in
 
     %sort vector
     
+    sorted = sort(x)
 
     %step 1
 
     %length of array
     n = length(x)
+    
     %default sigma
     sigma=[0.01:0.001:0.02]
     %some functions
@@ -46,7 +48,7 @@ function u = BASCB(x) %x is vector of time series measurements, sorted in
             for j = -10:10
             %simulate -inf to inf???
     
-                sigsum = sigsum + ((x(i+1) - x(i))*T(i-j,sig))
+                sigsum = sigsum + ((sorted(i+1) - sorted(i))*T(i-j,sig))
     
             end
             
@@ -138,9 +140,9 @@ function u = BASCB(x) %x is vector of time series measurements, sorted in
                 end
 
 
-                z = (x(breakpoints(i)) + x(breakpoints(i)+1))/2
+                z = (sorted(breakpoints(i)) + sorted(breakpoints(i)+1))/2
 
-                e = sum((x(i:n)-z).^2)
+                e = sum((sorted(i:n)-z).^2)
 
                 q = h/e
 
@@ -176,7 +178,7 @@ function u = BASCB(x) %x is vector of time series measurements, sorted in
     vmed = median(v)
     vmed = round(vmed)
     
-    t = (x(vmed+1)+x(vmed))/2
+    t = (sorted(vmed+1)+sorted(vmed))/2
 
     %binarized vector calculation
 

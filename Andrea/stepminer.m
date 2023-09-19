@@ -3,37 +3,35 @@
 %x is values (vector)
 %X is resulting vector
 
-function [breakPoints, type] = stepminer(x, alpha)
+function [u, type] = stepminer(x, alpha)
 
 n = length(x)
 %initialize
 %setting is twostep function true or false
-[SSR, SSE, breakpoints1, breakpoints2] = SSCalculate(n,x)
+[SSR, SSE, u1, u2] = SSCalculate(n,x)
 P1 = pval(SSE(1), SSR(1), n, 3)
 P2 = pval(SSE(2), SSR(2), n, 4)
 P12 = F12(SSE(1),SSE(2), 3, 4, n)
 
 %determine which to use better
 
-if P1<alpha && (1 - P12 < alpha)
+if P1<alpha && (P12 > alpha)
     type = "oneStep"
-    breakPoints = breakpoints1
+    u = u1
 elseif P2<alpha
     type = "twoStep"
-    breakPoints = breakpoints2
+    u = u2
 else
     type = "other"
-    breakPoints = [mean(x), NaN, NaN, NaN]
+    u(1:n) = mean(x)
     
 end
 
-type
-breakPoints
 
 end
 
 
-function [SSR, SSE, breakpoints1, breakpoints2] = SSCalculate(n, x)  %n here is the length not the vector
+function [SSR, SSE, u1, u2] = SSCalculate(n, x)  %n here is the length not the vector
 
     %Calculate SSTOT
 
@@ -89,12 +87,17 @@ function [SSR, SSE, breakpoints1, breakpoints2] = SSCalculate(n, x)  %n here is 
                 if SSEmin2 > SSE2
                     SSEmin2 = SSE2
 
-                %values
+                    %binarized vector
+                    %values
 
-                    breakpoints2(1) = leftMean2
-                    breakpoints2(2) = rightMean2
-                    breakpoints2(3) = i
-                    breakpoints2(4) = j
+                    u2(1:i) = leftMean2
+                    u2(i+1:j) = rightMean2
+                    u2(j+1:n) = leftMean2
+
+                    %breakpoints2(1) = leftMean2
+                    %breakpoints2(2) = rightMean2
+                    %breakpoints2(3) = i
+                    %breakpoints2(4) = j
 
                 end
                 
@@ -118,9 +121,12 @@ function [SSR, SSE, breakpoints1, breakpoints2] = SSCalculate(n, x)  %n here is 
 
             %store means and breakpoints
 
-            breakpoints1(1) = leftMean
-            breakpoints1(2) = rightMean
-            breakpoints1(3) = i
+            u1(1:i) = leftMean
+            u1(i+1:n) = rightMean
+
+            %breakpoints1(1) = leftMean
+            %breakpoints1(2) = rightMean
+            %breakpoints1(3) = i
     
         end
     end
