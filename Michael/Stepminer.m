@@ -25,22 +25,25 @@ function step = Stepminer(genes)
         meansOneLeft = mean(genes(1:i));
 
         % right side mean for fitted value
-        %if (i+1 <= n)
+        if (i+1 <= n)
             meansOneRight = mean(genes(i+1:n));
-        %end
+        end
 
         % find twostep sse and mean values
         for j = i+1:n
             % mean on left side
-            meansTwoLeft = (mean(genes(1:i)) + mean(genes(j+1:n)))/2;
+            meansTwoLeft = mean(genes(1:i));
 
-            % mean of right side
+            % mean of the middle
             %if(j+1 <= n)
-                meansTwoRight = mean(genes(i+1:j));
+            meansTwoMiddle = mean(genes(i+1:j));
             %end
 
+            % mean of right side
+            meansTwoRight = mean(genes(j+1:n));
+
             % calculate sse2
-            SSE2 = sum(((genes(1:i) - meansTwoLeft).^2)) + sum(((genes(i+1:j) - meansTwoRight).^2)) + sum(((genes(j+1:n) - meansTwoLeft).^2));
+            SSE2 = sum(((genes(1:i) - meansTwoLeft).^2)) + sum(((genes(i+1:j) - meansTwoMiddle).^2)) + sum(((genes(j+1:n) - meansTwoRight).^2));
           
             % get the minimum sse2
             if (minSSE2 > SSE2)
@@ -89,11 +92,15 @@ function step = Stepminer(genes)
     % versus a two-step pattern.
     F12 = ((minSSE1 - minSSE2) / (4 - 3)) / (minSSE2 / (n - 4));
 
+    % p-values
+    P1 = fpdf(F1,3-1,n-3);
+    P2 = fpdf(F1,4-1,n-4);
+
     % decide if it is one, two step or other
-    if (F1 < 0.05 && (F12 >= 0.05))
+    if (P1 < 0.05 && (F12 >= 0.05))
         step = "OneStep";
 
-    elseif (F2 < 0.05)
+    elseif (P2 < 0.05)
         step = "TwoStep";
     
     else
