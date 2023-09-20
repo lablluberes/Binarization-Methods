@@ -14,44 +14,57 @@ function step = Stepminer(genes)
     % calculate SSTOT
     SSTOT = sum((genes - mean(genes)).^2);
 
+    minSSE1 = Inf;
+    minSSE2 = Inf;
+
     % for each element in the vector calculate the fitted value
     % based on mean from point 1 to i on left side and mean of i+1 to n on
     % the right side
     for i = 1:n
         % left side mean for fitted value
-        means(i, 1) = mean(genes(1:i));
+        meansOneLeft = mean(genes(1:i));
 
         % right side mean for fitted value
-        if (i+1 <= n)
-            means(i, 2) = mean(genes(i+1:n));
-        end
+        %if (i+1 <= n)
+            meansOneRight = mean(genes(i+1:n));
+        %end
 
         % find twostep sse and mean values
-        for j = i:n
+        for j = i+1:n
             % mean on left side
-            means2(j, 1) = mean(genes(i:j));
+            meansTwoLeft = (mean(genes(1:i)) + mean(genes(j+1:n)))/2;
 
             % mean of right side
-            if(j+1 <= n)
-                means2(j, 2) = mean(mean(genes(j+1:n)) + mean(genes(1:j)));
-            end
+            %if(j+1 <= n)
+                meansTwoRight = mean(genes(i+1:j));
+            %end
 
             % calculate sse2
-            SSE2(i, 1) = ((genes(j) - means2(j, 1))^2) + ((genes(j) - means2(j, 2))^2);
+            SSE2 = sum(((genes(1:i) - meansTwoLeft).^2)) + sum(((genes(i+1:j) - meansTwoRight).^2)) + sum(((genes(j+1:n) - meansTwoLeft).^2));
           
+            % get the minimum sse2
+            if (minSSE2 > SSE2)
+                minSSE2 = SSE2;
+            end
+
         end
 
 
         % calculate the sse of those means (sum it in order to look for the
         % minimum value)
-        SSE1(i, 1) = ((genes(i) - means(i, 1))^2) + ((genes(i) - means(i, 2))^2);
+        SSE1 = sum(((genes(1:i) - meansOneLeft).^2)) + sum(((genes(i+1:n) - meansOneRight).^2));
+
+        % get the minium sse1
+        if (minSSE1 > SSE1)
+            minSSE1 = SSE1;
+        end
 
     end
 
 
     % get the minimum sse values
-    [minSSE1, index1] = min(SSE1);
-    [minSSE2, index2] = min(SSE2);
+    %[minSSE1, index1] = min(SSE1);
+    %[minSSE2, index2] = min(SSE2);
 
 
     % calculate SSR for both one and two step
@@ -67,7 +80,7 @@ function step = Stepminer(genes)
     MSE2 = minSSE2 / (n - 4);
 
     % F statistic for one step
-    F1 = MSR1/MSE1;
+    F1 = MSR1 / MSE1;
 
     % F statistic for two step
     F2 = MSR2 / MSE2;
