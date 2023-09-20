@@ -93,11 +93,12 @@ function step = Stepminer(genes)
     F12 = ((minSSE1 - minSSE2) / (4 - 3)) / (minSSE2 / (n - 4));
 
     % p-values
-    P1 = fpdf(F1,3-1,n-3);
-    P2 = fpdf(F1,4-1,n-4);
+    P1 = fpdf(F1, 3-1, n-3);
+    P2 = fpdf(F2, 4-1, n-4);
+    P12 = fpdf(F12, 4-3, n-4);
 
     % decide if it is one, two step or other
-    if (P1 < 0.05 && (F12 >= 0.05))
+    if (P1 < 0.05 && (P12 >= 0.05))
         step = "OneStep";
 
     elseif (P2 < 0.05)
