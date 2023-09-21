@@ -55,7 +55,8 @@ function result = K_Means(k, genes)
     
                     % calculate the distance of cluster k with the gene and
                     % assign it to a variable called distance
-                    distance(j) = sqrt(sum((center_points(j,:) - genes(i,:)).^2));
+                    distance(j) = abs(center_points(j,:) - genes(i,:));
+                    %sqrt(sum((center_points(j,:) - genes(i,:)).^2));
     
                 end
 
