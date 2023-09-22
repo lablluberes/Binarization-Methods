@@ -11,17 +11,15 @@
 % K_Means(k = num of clusters, genes = dataset)
 function result = K_Means(k, genes)
 
-    genes = genes';
-
-    % Calculates the mean of the centerpoint when all points are assigned
+        % Calculates the mean of the centerpoint when all points are assigned
    
         %tic; 
 
-        % get size of the array (rows)
-        n = size(genes,1);
+        % get size of the array (columns)
+        n = size(genes,2);
     
-        % get size of the array (colums)
-        m = size(genes,2);
+        % get size of the array (rows)
+        m = size(genes,1);
     
     
         % this is the current cluster assignment
@@ -32,7 +30,7 @@ function result = K_Means(k, genes)
         index = randperm(n,k);
     
         % create center_points using rand  
-        center_points = genes(index, :);
+        center_points = genes(index);
                      %center_points = rand(k, m);
                      %center_points = genes([1:k], :);
                      %cluster_curr([1:k]) = [1:k];
@@ -55,7 +53,7 @@ function result = K_Means(k, genes)
     
                     % calculate the distance of cluster k with the gene and
                     % assign it to a variable called distance
-                    distance(j) = abs(center_points(j,:) - genes(i,:));
+                    distance(j) = abs(center_points(j) - genes(i));
                     %sqrt(sum((center_points(j,:) - genes(i,:)).^2));
     
                 end
@@ -71,7 +69,7 @@ function result = K_Means(k, genes)
 
             % calculate the means of the new centers
             for i = 1:k
-                center_points(i,:) = mean(genes(cluster_curr == i,:));
+                center_points(i) = mean(genes(cluster_curr == i));
             end
     
             %figure;
