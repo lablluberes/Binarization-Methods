@@ -4,7 +4,7 @@
 
 % To run use Stepminer(genes = vector) the function returns means (not
 % finished) 
-function [binary, step] = Stepminer(genes)
+function [binary, step, thr] = Stepminer(genes)
 
     %genes = sort(genes);
 
@@ -148,7 +148,7 @@ function [binary, step] = Stepminer(genes)
     else
         % assign step value
         step = "Other";
-
+        thr = 0;
         % assigned binary vector -1 because it is other
         for i = 1:n
             binary(i) = -1;

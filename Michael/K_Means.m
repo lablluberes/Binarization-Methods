@@ -84,7 +84,7 @@ function result = K_Means(k, genes)
         %hold on
         %scatter(center_points(:,1), center_points(:,2), 100, 'x', 'black', 'linewidth', 3)
         
-      result = cluster_curr;
+      result = center_points;
 end
 
 

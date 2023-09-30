@@ -4,7 +4,7 @@
 % BASC_A(genes = vector) The vector does not need to be ordered. This is
 % done in the code
 
-function result = BASC_A(genes)
+function [result, thr] = BASC_A(genes)
 
     originalGenes = genes;
     genes = sort(originalGenes);
@@ -108,11 +108,11 @@ function result = BASC_A(genes)
     %%% Step 3: Estimate Location and Variation of the Strongest Discontinuities
 
     % calculate the threshold using median of v
-    t = (genes(round(median(v))+1) + genes(round(median(v)))) / 2;
+    thr = (genes(round(median(v))+1) + genes(round(median(v)))) / 2;
 
     % for each gene assign 0 or 1 based on the threshold
     for i = 1:n
-        if(originalGenes(i) <= t)
+        if(originalGenes(i) <= thr)
             u_binary(i) = 0;
         else
             u_binary(i) = 1;
