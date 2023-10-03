@@ -1,0 +1,92 @@
+HIV dataset
+
+KMEANS
+
+tolerance 0.00001
+
+Shape		Convergence Point	Samples
+
+Down		15528			7710
+DownUp		6657.6			4980
+Up		13595			5450
+UpDown		84071			2090
+
+
+tolerance 0.001
+
+Shape		Convergence Point	Samples
+
+Down		15528			1570
+DownUp		6651.2			150
+Up		13595			2370
+UpDown		84071			2000
+
+tolerance 0.1
+
+Shape		Convergence Point	Samples
+
+Down		15965			280
+DownUp		6735.2			390
+Up		12593			600
+UpDown		84059			400
+
+BASC A
+
+tolerance 0.00001
+
+Shape		Convergence Point	Samples
+
+Down		?			>1100
+DownUp		?			>1100
+Up		?			>1100
+UpDown		?			>1100
+
+
+tolerance 0.001
+
+Shape		Convergence Point	Samples
+
+Down		15589			920
+DownUp		6735.2			910
+Up		?			>1000
+UpDown		?			>1000
+
+tolerance 0.1
+
+Shape		Convergence Point	Samples
+
+Down		15528			250
+DownUp		6659.4			70
+Up		13630			310
+UpDown		?			>1000
+
+STEPMINER
+
+tolerance 0.00001
+
+Shape		Convergence Point	Samples
+
+Down		15528			2610
+DownUp		6867.4			1760
+Up		~13594			>3500
+UpDown		~82846			>3000
+
+
+tolerance 0.001
+
+Shape		Convergence Point	Samples
+
+Down		15528			1570
+DownUp		6867.7			760
+Up		13599			1450
+UpDown		82852			680
+
+tolerance 0.1
+
+Shape		Convergence Point	Samples
+
+Down		15529			240
+DownUp		6866.5			170
+Up		13630			300
+UpDown		82858			610
+
