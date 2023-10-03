@@ -1,0 +1,92 @@
+LeukB4 dataset
+
+KMEANS
+
+tolerance 0.00001
+
+Shape		Convergence Point	Samples
+
+Down		128.3029		680
+DownUp		95.0751			2870
+Up		67.6110			2050
+UpDown		82.2077			2430
+
+
+tolerance 0.001
+
+Shape		Convergence Point	Samples
+
+Down		128.2826		570
+DownUp		94.9832			350
+Up		67.6024			120
+UpDown		81.9721			460
+
+tolerance 0.1
+
+Shape		Convergence Point	Samples
+
+Down		127.8390		50
+DownUp		97.8211			60
+Up		67.2624			60
+UpDown		82.4540			100
+
+BASC A
+
+tolerance 0.00001
+
+Shape		Convergence Point	Samples
+
+Down		?			>1100
+DownUp		?			>1100
+Up		47.8267			550
+UpDown		103.2914		20
+
+
+tolerance 0.001
+
+Shape		Convergence Point	Samples
+
+Down		127.1785		150
+DownUp		92.7772			450
+Up		47.8257			510
+UpDown		103.2914		20
+
+tolerance 0.1
+
+Shape		Convergence Point	Samples
+
+Down		127.2009		50
+DownUp		89.3350			190
+Up		68.3629			90
+UpDown		103.2914		20
+
+STEPMINER
+
+tolerance 0.00001
+
+Shape		Convergence Point	Samples
+
+Down		128.3029		680
+DownUp		104.0275		1540
+Up		65.2962			920
+UpDown		58.0000			800
+
+
+tolerance 0.001
+
+Shape		Convergence Point	Samples
+
+Down		128.3501		490
+DownUp		104.2976		280
+Up		65.3623			320
+UpDown		58.0517			490
+
+tolerance 0.1
+
+Shape		Convergence Point	Samples
+
+Down		127.8390		50
+DownUp		105.1395		110
+Up		65.0599			70
+UpDown		58.4396			110
+
