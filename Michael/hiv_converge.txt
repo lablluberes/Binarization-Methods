@@ -1,0 +1,97 @@
+KMeans
+
+Tolerance: 0.1
+
+Shape                     Threshold 1           Threshold 2             Samples
+
+Up                        13618                    13618                  310
+Down                      15524                    15524                  330
+Up Down                   84064                    84064                  390
+Down Up                   6650.8                   6.650.8                210
+
+
+Tolerance: 0.001
+
+Shape                     Threshold 1           Threshold 2             Samples
+
+Up                         13596                    13596                1670
+Down                       15523                    15523                1290
+Up Down                    84073                    84073                1620
+Down Up                    6657.4                   6657.4               1090
+
+
+Tolerance 0.00001
+
+Shape                   Threshold 1            Threshold 2            Samples
+  
+Up                        13596                     13596               3850
+Down                      15528                     15528               5440
+Up Down                   84069                     84069               5560
+Down Up                   6657.6                    6657.6              2860
+
+
+Stepminer
+
+Tolerance: 0.1
+
+Shape                     Threshold 1           Threshold 2             Samples
+
+Up                         13611                     13610                 550             
+Down                       15524                     15524                 330                    
+Up Down                    82856                     82856                 440
+Down Up                    6866.2                    6866.2                130
+
+
+Tolerance: 0.001
+
+Shape                     Threshold 1           Threshold 2             Samples
+
+Up                            ?                               
+Down                          ?                               
+Up Down                   82856                        82856                  440
+Down Up                   6867.2                       6867.2                 730
+
+
+Tolerance 0.00001
+
+Shape                   Threshold 1            Threshold 2            Samples
+
+Up                           ?    
+Down                         ?
+Up Down                      ?
+Down Up                      ?
+
+
+BASC  A
+
+Tolerance: 0.1
+
+Shape                     Threshold 1           Threshold 2             Samples
+
+Up                             ?                
+Down                           ?
+Up Down                        ?
+Down Up                        ?
+
+
+Tolerance: 0.001
+
+Shape                     Threshold 1           Threshold 2             Samples
+
+Up                            ?                                
+Down                          ?                            
+Up Down                       ?
+Down Up                       ?
+
+
+Tolerance 0.00001
+
+Shape                   Threshold 1            Threshold 2            Samples
+
+Up                         ?                 
+Down                       ?
+Up Down                    ?
+Down Up                    ?
+
+   
+
