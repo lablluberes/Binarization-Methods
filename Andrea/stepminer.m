@@ -91,7 +91,7 @@ function [SSR, SSE, threshold1, threshold2] = SSCalculate(n, x)  %n here is the 
                 end
                 
             end
-
+        end
 
         %calculate SSE
         %calculate SSR first since xmean is fixed
