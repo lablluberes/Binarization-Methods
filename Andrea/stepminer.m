@@ -42,15 +42,6 @@ function [SSR, SSE, threshold1, threshold2] = SSCalculate(n, x)  %n here is the 
 
     SSTOT = sum((x(1:n)-xmean).^2);
 
-
-    %kinda based on 
-    %https://github.com/suryattheja/StepMiner-BioInformatics
-
-    %index 1 is mean 1
-    %index 2 is mean 2
-    %index 3 is breakpoint 1 index
-    %index 4 is breakpoint 2 index (unused so NaN)
-
     %find means from left and right as it goes
     %and find smallest SSE for optimal step
     %considering all possibilities
@@ -72,7 +63,7 @@ function [SSR, SSE, threshold1, threshold2] = SSCalculate(n, x)  %n here is the 
         %add up mean from right side
         % this is so it doesnt divide by 0
         rightMean = mean(x(i+1:n));
-        if i < n-2
+        if i < n-1
             %all values from breakpoint i until possible breakpoints
             for j = i+1:n-1
 
@@ -101,10 +92,6 @@ function [SSR, SSE, threshold1, threshold2] = SSCalculate(n, x)  %n here is the 
                 
             end
 
-        else
-            rightMean = x(n);
-        
-        end
 
         %calculate SSE
         %calculate SSR first since xmean is fixed
