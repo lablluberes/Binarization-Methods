@@ -3,31 +3,26 @@
 %x is values (vector)
 %X is resulting vector
 
-function [u, threshold] = stepminer(x, alpha)
+function [u, threshold] = stepminermod(x)
 
 n = length(x);
 %initialize
 %setting is twostep function true or false
 [SSR, SSE, t1, t2] = SSCalculate(n,x);
-P1 = pval(SSE(1), SSR(1), n, 3)
-P2 = pval(SSE(2), SSR(2), n, 4)
+P1 = pval(SSE(1), SSR(1), n, 3);
+P2 = pval(SSE(2), SSR(2), n, 4);
 P12 = F12(SSE(1),SSE(2), 3, 4, n);
 
 %determine which to use better
 
-if P1<alpha % && (P12 > alpha)
+if P1<=P2 % && (P12 > alpha)
     %type = "oneStep";
     u = x > t1;
     threshold = t1;
-elseif P2<alpha
+else
     %type = "twoStep";
     u = x > t2;
     threshold = t2;
-else
-    %type = "other";
-    u = zeros(1,n);
-    threshold = NaN;
-    
 end
 
 
@@ -147,13 +142,13 @@ function [P, m] = pval (SSE, SSR, n, m)
 
     %F
 
-    F = MSR/MSE;
+    F = MSR/MSE
 
     %f distribution probability
     % i think this is correct
     %p value
 
-    P = fpdf(F,m-1,n-m);
+    P = fpdf(F,m-1,n-m)
 
 
 end
