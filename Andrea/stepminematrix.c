@@ -3,6 +3,132 @@
 #include <math.h>
 #include <omp.h>
 
+
+
+//count rows in file
+
+int getRows(FILE *f){
+	
+	//read rows
+	int rows = 0;
+	char buffer[1024];
+	//printf("rows:%d\n",rows);
+    while (fgets(buffer, 1024, f)){		
+		rows++;	
+	} 
+	
+	
+	return rows;
+	
+}
+
+
+//count columns in file
+
+int getCols(FILE *f){
+	
+	int cols = 0;
+	
+	char line[1024];
+	
+	fgets(line, 1024, f);
+	
+	char *scan = line;
+	
+	//count cols
+	
+	double dummy;
+	int offset = 0;
+	
+	while(sscanf(scan, "%le,%n", &dummy, &offset) == 1)
+	{
+		scan += offset;
+		cols++;
+	}
+	
+	return cols;
+	
+	
+}
+
+
+//read file data
+
+
+double** readFile(FILE *f, int rows, int cols){
+	
+	double num; 
+	double** matrix = NULL;
+	
+	//allocate rows
+	matrix = malloc(rows*sizeof(double));
+	
+	//allocate columns
+	for(int i = 0; i < rows; i++)
+		matrix[i] = malloc(cols*sizeof(double));
+
+
+	//read data
+	for(int i = 0; i < rows; i++){
+		for(int j = 0; j < cols; j++){
+			fscanf(f, "%le,", &num);
+			matrix[i][j] = num;
+			//printf("%le ",matrix[i][j]);
+		}
+		//printf("\n");
+	}
+
+
+	return matrix;
+}
+
+
+//allocate empty result matrix
+
+int** allocMat(int rows, int cols){
+	
+	int** matrix = NULL;
+	
+	//allocate rows
+	matrix = malloc(rows*sizeof(int));
+	
+	//allocate columns
+	for(int i = 0; i < rows; i++)
+		matrix[i] = malloc(cols*sizeof(int));
+
+	
+	return matrix;
+}
+
+
+//for double
+void freeMat(double** M, int rows){
+	
+	
+	for(int i = 0; i < rows; i++)
+		free(M[i]);
+	
+	free(M);
+	
+}
+
+
+//for int
+void freeMatInt(int** M, int rows){
+	
+	
+	for(int i = 0; i < rows; i++)
+		free(M[i]);
+	
+	free(M);
+	
+}
+
+
+
+//STEPMINER FUNCTIONS
+
+
 //Get mean of values in array
 double mean(double* array, int i, int j){
 	
@@ -18,36 +144,6 @@ double mean(double* array, int i, int j){
 	
 }
 
-
-//Count the amount of values in the set
-int countFile(FILE *f){
-	
-	int counter = 0;
-	double num;
-	while(fscanf(f, "%le,", &num)==1){
-		counter++;
-	}
-	return counter;
-}
-
-//Read numbers and store them
-//Please reset file reading pointer before
-//calling this
-double* readFile(FILE *f, int n){
-	
-	double* data = malloc(n*sizeof(double));
-	double num;
-	
-	for(int i = 0; i < n; i++){
-		fscanf(f, "%le, ", &num);
-		data[i] = num;
-	}
-	
-	return data;
-	
-}
-
-
 //SSTOT
 double getSSTOT(double* x, double xmean, int n){
 	
@@ -60,6 +156,7 @@ double getSSTOT(double* x, double xmean, int n){
 	return sum;
 }
 
+//SSE for onestep
 
 double onestepSSE(double* x, double left, double right, int i, int n){
 	
@@ -77,6 +174,7 @@ double onestepSSE(double* x, double left, double right, int i, int n){
 	
 }
 
+//SSE for twostep
 
 double twostepSSE(double* x, double left, double right,int i, int j, int n){
 	
@@ -119,7 +217,7 @@ int* stepminer(double* x, int n){
 	//stuff i need to store indexes
 	int i1, i2, j2;
 	
-	double wtime = omp_get_wtime();
+	
 	//parallel them separately
 	//onestep
 
@@ -183,9 +281,7 @@ int* stepminer(double* x, int n){
 		}
 		
 	}
-	printf("step: %d\n", step);
-	wtime = omp_get_wtime() - wtime;
-	printf("time elapsed is %f\n", wtime);
+	//printf("step: %d\n", step);
 	//printf("twostep done\n");
 	
 	int* u = malloc(n*sizeof(int));
@@ -214,43 +310,83 @@ int* stepminer(double* x, int n){
 	
 }
 
-int main(int argc, char **argv){
 
 
-	FILE *f; //*w;
-	
-	//open file to read
+//main
+
+
+int main(int argc, char **argv)
+{
+
+	FILE *f, *w;
 	
 	f = fopen(argv[1], "r");
-	//w = fopen("stepminermodc.txt", "a");
 
-	int n = countFile(f);
-	printf("size: %d\n", n);
-	//for testing
-	//int n = 6;
-	double* x;
-	int* u;
-
-	//reset pointer to start of file
+	int rows;
+	int cols;
+	
+	
+	if (f == NULL){
+		printf("fake.\n");
+		return 0;
+	}
+	
+	if(argc > 2){
+		w = fopen(argv[2], "a");
+	}
+	else{
+		w = fopen("result.txt", "a");
+	}
+	
+	//count rows
+	rows = getRows(f);
+	
+	//reset pointer
 	fseek(f, 0, SEEK_SET);
 	
-	//for(int a = 0; a < 418; a++){
-		
-		x = readFile(f, n);
-		
-		u = stepminer(x, n);
-		
-		for(int i = 0; i < n; i++)
-		{
-			//fprintf(w, " %d", u[i]);	
-			printf("%d ", u[i]);
+	//countCols
+	cols = getCols(f);
+	
+	//reset pointer again
+	fseek(f, 0, SEEK_SET);
+	
+	//read nums
+	double** matrix = readFile(f, rows, cols);
+	
+	//result matrix
+	int** u = allocMat(rows,cols);
+	
+	//divide work
+	
+	
+	double wtime = omp_get_wtime();
+	
+	
+	#pragma omp parallel for
+	for(int i = 0; i < rows; i++)
+		u[i] = stepminer(matrix[i],cols);
+	
+	wtime = omp_get_wtime() - wtime;
+	printf("time elapsed is %f\n", wtime);
+	
+	//empty init matrix
+	freeMat(matrix,rows);
+	
+	
+	//write result matrix to file
+	
+	for(int i = 0; i < rows; i++){
+		for(int j = 0; j < cols; j++){
+			fprintf(w, " %d", u[i][j]);	
 		}
-		
-		//fprintf(w, "\n");	
-		printf("\n");
-	//}
+		fprintf(w,"\n");
+	}
+	
+	//empty result matrix
+	//freeMatInt(u,rows);
+
 	fclose(f);
+	fclose(w);
 	
 	return 0;
-
 }

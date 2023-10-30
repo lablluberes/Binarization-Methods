@@ -1,0 +1,50 @@
+HIV dataset - NORMALIZED VECTORS
+
+ROWS
+
+UP - 36
+DOWN - 30
+UPDOWN - 28
+DOWNUP - 5
+
+tolerance 0.00001
+
+KMEANS
+
+Shape		Convergence Point	Samples		Max		Min		Dif
+
+Down		0.4830			240		0.4941		0.4274		0.0667
+DownUp		0.5437			190		0.5748		0.4940		0.0808
+Up		0.3572			300		0.4157		0.3326		0.0831
+UpDown		0.3885			680		0.4104		0.3536		0.0568
+
+BASC A
+
+Shape		Convergence Point	Samples		Max		Min		Dif
+
+Down		0.5277			280		0.5634		0.3471		0.2163
+DownUp		0.6114			650		0.7157		0.4493		0.2664
+Up		0.2453			600		0.2752		0.1995		0.0757
+UpDown		?			>1100
+
+Tolerance 0.001 for missing UpDown
+		0.3407			200		0.5240		0.3049		0.2192
+
+STEPMINER
+
+Shape		Convergence Point	Samples		Max		Min		Dif
+
+Down		0.4830			240		0.4834		0.4274		0.0559	
+DownUp		0.7276			220		0.7315		0.5425		0.1889
+Up		0.3572			300		0.3732		0.3326		0.0406
+UpDown		0.2390			610		0.4948		0.2380		0.2569		
+
+
+STEPMINERMOD
+
+Shape		Convergence Point	Samples		Max		Min		Dif
+
+Down		0.4830			240		0.4834		0.4274		0.0559	
+DownUp		0.5437			190		0.5748		0.5330		0.1889
+Up		0.3572			300		0.3732		0.3326		0.0406
+UpDown		0.4637			110		0.5262		0.4492		0.0770		
