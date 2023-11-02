@@ -239,7 +239,10 @@ int* stepminer(double* x, int n){
 				min2 = sse;
 						
 				ssr = sstot - sse;
+				if(n > 4)
 				m = 4;
+				else
+				m = 2;
 				msr = ssr/(m-1);
 				mse = sse/(n-m);
 				F = msr/mse;
@@ -265,7 +268,10 @@ int* stepminer(double* x, int n){
 			min1 = sse;
 			
 			ssr = sstot - sse;
+			if(n > 4)
 			m = 3;
+			else
+			m = 2;
 			msr = ssr/(m-1);
 			mse = sse/(n-m);
 			F = msr/mse;
@@ -346,6 +352,7 @@ int main(int argc, char **argv)
 	
 	//countCols
 	cols = getCols(f);
+	printf("size:%dx%d\n",rows,cols);
 	
 	//reset pointer again
 	fseek(f, 0, SEEK_SET);

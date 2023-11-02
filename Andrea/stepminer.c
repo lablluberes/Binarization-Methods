@@ -139,9 +139,13 @@ int* stepminer(double* x, int n){
 					
 			if(sse < min2){
 				min2 = sse;
-						
 				ssr = sstot - sse;
+				if(n > 4)
 				m = 4;
+				else
+				m = 2;
+			
+			
 				msr = ssr/(m-1);
 				mse = sse/(n-m);
 				F = msr/mse;
@@ -167,7 +171,11 @@ int* stepminer(double* x, int n){
 			min1 = sse;
 			
 			ssr = sstot - sse;
+			if(n > 4)
 			m = 3;
+			else
+			m = 2;
+		
 			msr = ssr/(m-1);
 			mse = sse/(n-m);
 			F = msr/mse;

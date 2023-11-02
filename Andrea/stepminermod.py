@@ -53,7 +53,10 @@ def stepminer(x, alpha):
                     
                     #verify F best fit
                     SSR = SSTOT - SSEmin2
-                    m = 4
+                    if(n>4):
+                        m = 4
+                    else:
+                        m = 2
                     MSR = SSR/(m-1)
                     MSE = SSEmin2/(n-m)
                     F = MSR/MSE
@@ -90,7 +93,10 @@ def stepminer(x, alpha):
             
             #verify F best fit
             SSR = SSTOT - SSEmin1
-            m = 3
+            if(n > 4):
+                m = 3
+            else:
+                m = 2
             MSR = SSR/(m-1)
             MSE = SSEmin1/(n-m)
             F = MSR/MSE
@@ -128,11 +134,11 @@ def getSSTOT(x, n, xmean):
 
 #TESTING
 
-HIVdat = np.loadtxt("HIVIn(Matlab).csv",delimiter=",")
+HIVdat = np.loadtxt("tseriestest.txt",delimiter=",")
 blank = np.empty([len(HIVdat), len(HIVdat[0])])
 
 for i in range(len(HIVdat)):
     arr, t = stepminer(HIVdat[i], 0.05)
     blank[i] = arr
 
-np.savetxt("stepminermodpy.txt", blank, delimiter=",", fmt='%d')
+np.savetxt("test.txt", blank, delimiter=",", fmt='%d')

@@ -24,7 +24,10 @@ def stepminer(x, alpha):
     #print(SSE)
     #print(SSR)
     
-    m = 3
+    if(n > 4):
+        m = 3
+    else:
+        m = 2
     
     #onestep
     MSR = SSR[0]/(m-1)
@@ -35,7 +38,8 @@ def stepminer(x, alpha):
         t = t1
         #print("step 1")
     else:      
-         m = 4
+         if(n > 4):
+             m = 4
          
          #twostep
          MSR = SSR[1]/(m-1)
