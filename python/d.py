@@ -1,4 +1,4 @@
-from d import Dash, dash_table, dcc, html, Input, Output, callback
+from dash import Dash, dash_table, dcc, html, Input, Output, callback, State
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -91,7 +91,6 @@ def BASC_A(gene):
 
     return thr, P
 
-
 from sklearn.cluster import KMeans
 
 def K_Means(genes):
@@ -173,135 +172,502 @@ def shmulevich(x):
     
     return z
 
+#threshold/displacement indexes are vectors with values in them
+#for different algorithms
 
+def binarizationVoting(gene, threshold, displacement):
 
-from scipy.interpolate import splev, splrep
+    #2d array that stores algorithm results
+    #x axis is gene
+    #y axis is algorithm
 
-def interpolation(gene, method, tolerance, limit):
-    
-    converge = False
-    samples = 10
-    thr_array = []
-    tMin = 0
-    tMax = 0
-    thr = 0
-    
-    while(~converge and samples != limit):
-        n = len(gene)
-        x = np.arange(1, n + 1, dtype=int)
-        y = gene
+    alg = len(threshold)
+    n = len(gene)
 
-        xx = np.arange(1, n + 1, (n) / (samples))
+    algos = np.zeros([alg, n])
 
-        p = splrep(x, y, s=0)
-        yy = splev(xx, p)
-        
-        if(method == 'K-Means'):
-            thr = K_Means(yy)
-            
-        elif(method == 'BASC A'):
-            thr, _ = BASC_A(yy)
-            
-        elif(method == 'Onestep'):
-            thr = onestep(yy)
-            
+    #get results for every algorithm
+    for i in range(alg): 
+        for j in range(n):
+            if (gene[j] + displacement[i] < threshold[i]) and (abs(threshold[i] - gene[j]) > displacement[i]):
+                algos[i][j] = 1
+            elif(abs(threshold[i] - gene[j]) <= displacement[i]):
+                algos[i][j] = 2
+            else:
+                algos[i][j] = 3
+
+    #id 
+    # 1 -> U
+    # 2 -> N
+    # 3 -> E
+
+    # start counting votes
+    majority = np.zeros(n)
+       
+    for i in range(n):
+
+        #array of tally votes
+        results = algos[:,i]
+        U = np.count_nonzero(results == 1)
+        N = np.count_nonzero(results == 2)
+        E = np.count_nonzero(results == 3)
+
+        #binarize tally votes
+        tally = [U,N,E]
+        for j in range(3):
+            #if algorithms is an even number this will be half, else itll be a
+            #number rounded up from half ex. 3 -> 1.5 becomes 2
+            if tally[j] >= math.ceil(alg/2):
+                tally[j] = 1
+            else:
+                tally[j] = 0
+
+        #first check if final tally contradicts itself
+        if sum(tally) != 1:
+            majority[i] = np.nan
+        #then check other cases
         else:
-            thr = shmulevich(yy)
-        
-        thr_array.append(thr)
-        
-        n_thr = len(thr_array)
-        
-        for i in range(n_thr):
-            for j in range(n_thr):
-                if(i != j):
-                    difference = abs(thr_array[i] - thr_array[j])
-                    
-                    if(difference <= tolerance):
-                        converge = True
-                        break
-                        
-            if(converge or samples != limit):
-                tMin = min(thr_array)
-                tMax = max(thr_array)
-                break
-                
-        if(~converge):
-            samples += 10
-            
-            
-    
-    return tMin, tMax
-        
+            if tally[0] == 1:
+                majority[i] = 0
+            elif tally[1] == 1:
+                majority[i] = np.nan
+            else:
+                majority[i] = 1
 
-from scipy.interpolate import splev, splrep
 
-def interpolationConverge(gene, method, tolerance):
-    
+
+     #return 2d array of votes + final votes
+    return algos, majority
+
+
+def interpolationConverge(vect, method, tolerance):
+
+    thr = []
     converge = False
-    samples = 10
-    thr_array = []
-    tMin = 0
-    tMax = 0
-    thr = 0
-    conver = 0
-    #change later
-    #limit = 10000
+    n = (len(vect) - 1)
+    newSize = len(vect) + (len(vect) - 1)
+    gene = vect
+    sample = []
     limit = 10000
+    conver = 0
     
-    while(~converge and samples != limit):
-        n = len(gene)
-        x = np.arange(1, n + 1, dtype=int)
-        y = gene
+    while(~converge and newSize < limit):
+        
+        sample.append(newSize)
+        indices = np.arange(len(vect))
 
-        xx = np.arange(1, n + 1, (n) / (samples))
-
-        p = splrep(x, y, s=0)
-        yy = splev(xx, p)
+        interpolated_values = np.interp(
+            np.linspace(0, len(vect) - 1, len(vect) + n),
+            indices,
+            gene
+        )
+        
+        #print(interpolated_values, "\n")
+        
+        gene = interpolated_values
         
         if(method == 'K-Means'):
-            thr = K_Means(yy)
-            
+            thr.append(K_Means(vect))
         elif(method == 'BASC A'):
-            thr, _ = BASC_A(yy)
-            
+            t, _ = BASC_A(vect)
+            thr.append(t)
         elif(method == 'Onestep'):
-            thr = onestep(yy)
-            
+            thr.append(onestep(vect))
         else:
-            thr = shmulevich(yy)
+            thr.append(shmulevich(vect))
+    
+        #print(interpolated_values)
         
-        thr_array.append(thr)
-        
-        n_thr = len(thr_array)
+        n_thr = len(thr)
         
         for i in range(n_thr):
             for j in range(n_thr):
                 if(i != j):
-                    difference = abs(thr_array[i] - thr_array[j])
+                    difference = abs(thr[i] - thr[j])
                     
                     if(difference <= tolerance):
                         converge = True
-                        conver = thr_array[j]
+                        conver = thr[j]
                         break
-                
+              
         if(~converge):
-            samples += 10
-
+            n = newSize - 1
+            newSize = newSize + (newSize-1)
+            vect = interpolated_values
         
-            
 
 
-    tMin = min(thr_array)
-    tMax = max(thr_array)
+    tMin = min(thr)
+    tMax = max(thr)
     
-    return tMin, tMax, conver, samples
+    return tMin, tMax, conver, newSize
 
+def three_interpolation(vect, method):
+    thr = []
+    n = (len(vect) - 1)
+    newSize = len(vect) + (len(vect) - 1)
+    gene = vect
+    sample = []
+    for i in range(3):
+        sample.append(newSize)
+        indices = np.arange(len(gene))
 
+        interpolated_values = np.interp(
+            np.linspace(0, len(gene) - 1, len(gene) + n),
+            indices,
+            gene
+        )
+        
+        #print(interpolated_values, "\n")
+        
+        gene = interpolated_values
+        
+        if(method == 'K-Means'):
+            thr.append(K_Means(gene))
+        elif(method == 'BASC A'):
+            t, _ = BASC_A(gene)
+            thr.append(t)
+        elif(method == 'Onestep'):
+            thr.append(onestep(gene))
+        else:
+            thr.append(shmulevich(gene))
+        
+        n = newSize - 1
+        newSize = newSize + (newSize-1)
+    
+    return thr, sample
+
+import networkx as nx
+
+def A_state(state):
+    return state[1]
+
+def B_state(state):
+    return int(not state[0])
+
+def C_state(state):
+    return int(state[0] or state[1])
+
+def create_boolean_network(selected, method, data):
+    
+    gene_data = pd.DataFrame(data)
+    
+    genes = gene_data.iloc[selected].values.astype(float)
+    print(genes)
+    
+    df = pd.DataFrame(columns=['A', 'B', 'C', "A'", "B'", "C'"])
+    
+    binarize_array = []
+    binarize = []
+    
+    for gene in genes:
+        if(method == "K-Means"):
+            thr = K_Means(gene)
+        elif(method == "Shmulevich"):
+            thr = shmulevich(gene)
+        elif(method == "Onestep"):
+            thr = onestep(gene)
+        else:
+            thr, _ = BASC_A(gene)
+            
+        for exp in gene:
+            if(exp <= thr):
+                binarize.append(0)
+            else:
+                binarize.append(1)
+                
+        binarize_array.append(binarize)
+        binarize = []
+    
+    
+    df["A"] = binarize_array[0]
+    df["B"] = binarize_array[1]
+    df["C"] = binarize_array[2]
+    
+    #print(df)
+    
+    result = df[['A', 'B', 'C']]
+    
+    for index, row in result.iterrows():
+        state = [row['A'], row['B'], row['C']]
+        
+        df.at[index, "A'"] = A_state(state)
+        df.at[index, "B'"] = B_state(state)
+        df.at[index, "C'"] = C_state(state)
+        
+    
+    
+    return df
+
+import matplotlib.pyplot as plt
+
+def create_boolean_network_graph(selected, data):
+    
+    KMeans = pd.DataFrame(create_boolean_network(selected, "K-Means", data))
+    BASCA = pd.DataFrame(create_boolean_network(selected, "BASC A", data))
+    Onestep = pd.DataFrame(create_boolean_network(selected, "Onestep", data))
+    Shmul = pd.DataFrame(create_boolean_network(selected, "Shmulevich", data))
+    
+    G1 = nx.DiGraph()
+    G2 = nx.DiGraph()
+    G3 = nx.DiGraph()
+    G4 = nx.DiGraph()
+    
+    for index, row in KMeans.iterrows():
+        KMeans_curr_state = str(row["A"]) + str(row["B"]) + str(row["C"])
+        KMeans_next_state = str(row["A'"]) + str(row["B'"]) + str(row["C'"])
+        
+        BASC_curr_state = str(BASCA.at[index ,"A"]) + str(BASCA.at[index, "B"]) + str(BASCA.at[index, "C"])
+        BASC_next_state = str(BASCA.at[index ,"A'"]) + str(BASCA.at[index, "B'"]) + str(BASCA.at[index, "C'"])
+        
+        One_curr_state = str(Onestep.at[index ,"A"]) + str(Onestep.at[index, "B"]) + str(Onestep.at[index, "C"])
+        One_next_state = str(Onestep.at[index ,"A'"]) + str(Onestep.at[index, "B'"]) + str(Onestep.at[index, "C'"])
+        
+        Shm_curr_state = str(Shmul.at[index ,"A"]) + str(Shmul.at[index, "B"]) + str(Shmul.at[index, "C"])
+        Shm_next_state = str(Shmul.at[index ,"A'"]) + str(Shmul.at[index, "B'"]) + str(Shmul.at[index, "C'"])
+        
+        '''if(KMeans_curr_state == BASC_curr_state == One_curr_state == Shm_curr_state):
+            
+            G1.add_node(KMeans_curr_state, color = 'gray')
+
+            G2.add_node(BASC_curr_state, color = 'gray')
+
+            G3.add_node(One_curr_state, color = 'gray')
+
+            G4.add_node(Shm_curr_state, color = 'gray')
+            
+        else:
+            
+            G1.add_node(KMeans_curr_state, color = 'red')
+
+            G2.add_node(BASC_curr_state, color = 'red')
+
+            G3.add_node(One_curr_state, color = 'red')
+
+            G4.add_node(Shm_curr_state, color = 'red')
+            
+        if(KMeans_next_state == BASC_next_state == One_next_state == Shm_next_state):
+            
+            G1.add_node(KMeans_next_state, color = 'gray')
+
+            G2.add_node(BASC_next_state, color = 'gray')
+            
+            G3.add_node(One_next_state, color = 'gray')
+
+            G4.add_node(Shm_next_state, color = 'gray')
+            
+        else:
+            
+            G1.add_node(KMeans_next_state, color = 'red')
+
+            G2.add_node(BASC_next_state, color = 'red')
+
+            G3.add_node(One_next_state, color = 'red')
+
+            G4.add_node(Shm_next_state, color = 'red')'''
+        
+        G1.add_node(KMeans_curr_state, color = 'gray')
+        G2.add_node(BASC_curr_state, color = 'gray')
+        G3.add_node(One_curr_state, color = 'gray')
+        G4.add_node(Shm_curr_state, color = 'gray')
+        
+        G1.add_node(KMeans_next_state, color = 'gray')
+        G2.add_node(BASC_next_state, color = 'gray')   
+        G3.add_node(One_next_state, color = 'gray')
+        G4.add_node(Shm_next_state, color = 'gray')
+            
+        G1.add_edge(KMeans_curr_state, KMeans_next_state)
+        G2.add_edge(BASC_curr_state, BASC_next_state)
+        G3.add_edge(One_curr_state, One_next_state)
+        G4.add_edge(Shm_curr_state, Shm_next_state)
+        
+    fig = plt.figure()
+    
+    pos = nx.spring_layout(G1) 
+    plt.subplot(221)
+    plt.title("K-Means")
+    nx.draw(G1, pos, with_labels=True, node_color=[G1.nodes[n]['color'] for n in G1.nodes])
+    #plt.show()
+    
+    #plt.figure()
+    
+    plt.subplot(222)
+    plt.title("BASCA")
+    pos = nx.spring_layout(G2) 
+    nx.draw(G2, pos, with_labels=True, node_color=[G2.nodes[n]['color'] for n in G2.nodes])
+    #plt.show()
+    
+    #plt.figure()
+    
+    plt.subplot(223)
+    plt.title("Onestep")
+    pos = nx.spring_layout(G3) 
+    nx.draw(G3, pos, with_labels=True, node_color=[G3.nodes[n]['color'] for n in G3.nodes])
+    #plt.show()
+    
+    #plt.figure()
+    
+    plt.subplot(224)
+    plt.title("Shmulevich")
+    pos = nx.spring_layout(G4) 
+    nx.draw(G4, pos, with_labels=True, node_color=[G4.nodes[n]['color'] for n in G4.nodes])
+    plt.show()
+    
+    return fig
+    
+
+def graph_three_interpolation_network(selected, method, df):
+    
+    inter1Net = pd.DataFrame(columns=['A', 'B', 'C', "A'", "B'", "C'"])
+    inter2Net = pd.DataFrame(columns=['A', 'B', 'C', "A'", "B'", "C'"])
+    inter3Net = pd.DataFrame(columns=['A', 'B', 'C', "A'", "B'", "C'"])
+    
+    gene_data = pd.DataFrame(df)
+    
+    genes = gene_data.iloc[selected].values.astype(float)
+    
+    thr_arr_geneA = three_interpolation(genes[0], method)
+    thr_arr_geneB = three_interpolation(genes[1], method)
+    thr_arr_geneC = three_interpolation(genes[2], method)
+    
+    #print(thr_arr_geneA, thr_arr_geneB, thr_arr_geneC  )
+    
+    interA_Binarized = []
+    interB_Binarized = []
+    interC_Binarized = []
+    
+    binarized1 = []
+    binarized2 = []
+    binarized3 = []
+    
+    #print(genes[0], genes[1], genes[2])
+    
+    for i in range(3):
+        
+        for j in range(len(genes[0])):
+            if(genes[0][j] <= thr_arr_geneA[0][i]):
+                binarized1.append(0)
+            else:
+                binarized1.append(1)
+                
+            if(genes[1][j] <= thr_arr_geneB[0][i]):
+                binarized2.append(0)
+            else:
+                binarized2.append(1)
+                
+            if(genes[2][j] <= thr_arr_geneC[0][i]):
+                binarized3.append(0)
+            else:
+                binarized3.append(1)
+                
+        interA_Binarized.append(binarized1)
+        interB_Binarized.append(binarized2)
+        interC_Binarized.append(binarized3)
+        
+        binarized1 = []
+        binarized2 = []
+        binarized3 = []
+                
+    inter1Net["A"] = interA_Binarized[0]
+    inter1Net["B"] = interB_Binarized[0]
+    inter1Net["C"] = interC_Binarized[0]
+    
+    inter2Net["A"] = interA_Binarized[1]
+    inter2Net["B"] = interB_Binarized[1]
+    inter2Net["C"] = interC_Binarized[1]
+    
+    inter3Net["A"] = interA_Binarized[2]
+    inter3Net["B"] = interB_Binarized[2]
+    inter3Net["C"] = interC_Binarized[2]
+    
+    #print(interA_Binarized)
+    
+    #print(inter1Net)
+    #print(inter2Net)
+    #print(inter3Net)
+    
+    result = inter1Net[['A', 'B', 'C']]
+    
+    for index, row in result.iterrows():
+        state1 = [row['A'], row['B'], row['C']]
+        state2 = [inter2Net.at[index, 'A'], inter2Net.at[index, 'B'], inter2Net.at[index, 'C']]
+        state3 = [inter3Net.at[index, 'A'], inter3Net.at[index, 'B'], inter3Net.at[index, 'C']]
+        
+        inter1Net.at[index, "A'"] = A_state(state1)
+        inter1Net.at[index, "B'"] = B_state(state1)
+        inter1Net.at[index, "C'"] = C_state(state1)
+        
+        inter2Net.at[index, "A'"] = A_state(state2)
+        inter2Net.at[index, "B'"] = B_state(state2)
+        inter2Net.at[index, "C'"] = C_state(state2)
+        
+        inter3Net.at[index, "A'"] = A_state(state3)
+        inter3Net.at[index, "B'"] = B_state(state3)
+        inter3Net.at[index, "C'"] = C_state(state3)
+        
+    #print(inter1Net)
+    #print(inter2Net)
+    #print(inter3Net)
+    
+    
+    #plot1 = graph_network(inter1Net, thr_arr_geneA[1][0])
+    
+    #plot2 = graph_network(inter2Net, thr_arr_geneA[1][1])
+    
+    #plot3 = graph_network(inter3Net, thr_arr_geneA[1][2])
+    
+    G = nx.DiGraph()
+    
+    for index, row in inter1Net.iterrows():
+        curr_state = str(row["A"]) + str(row["B"]) + str(row["C"])
+        next_state = str(row["A'"]) + str(row["B'"]) + str(row["C'"])
+        
+        G.add_node(curr_state)
+        G.add_node(next_state)
+        G.add_edge(curr_state, next_state)
+    
+    fig = plt.figure()
+    plt.subplot(221)
+    pos = nx.spring_layout(G)
+    plt.title("Interpolation of Size " + str(thr_arr_geneA[1][0]))
+    nx.draw(G, pos, with_labels=True)
+    
+    G1 = nx.DiGraph()
+    
+    for index, row in inter2Net.iterrows():
+        curr_state = str(row["A"]) + str(row["B"]) + str(row["C"])
+        next_state = str(row["A'"]) + str(row["B'"]) + str(row["C'"])
+        
+        G1.add_node(curr_state)
+        G1.add_node(next_state)
+        G1.add_edge(curr_state, next_state)
+    
+    pos = nx.spring_layout(G1)
+    plt.subplot(222)
+    plt.title("Interpolation of Size " + str(thr_arr_geneA[1][1]))
+    nx.draw(G1, pos, with_labels=True)
+    
+    G2 = nx.DiGraph()
+    
+    for index, row in inter3Net.iterrows():
+        curr_state = str(row["A"]) + str(row["B"]) + str(row["C"])
+        next_state = str(row["A'"]) + str(row["B'"]) + str(row["C'"])
+        
+        G2.add_node(curr_state)
+        G2.add_node(next_state)
+        G2.add_edge(curr_state, next_state)
+    
+    pos = nx.spring_layout(G2)
+    plt.subplot(223)
+    plt.title("Interpolation of Size " + str(thr_arr_geneA[1][2]))
+    nx.draw(G2, pos, with_labels=True)
+
+    return fig
 
 import dash_bootstrap_components as dbc 
-
-df = pd.read_csv('HIVIn(Matlab).csv')
+import base64
+import io
+from io import BytesIO
 
 col_names = {'basc_thr':[], 'kmeans_thr':[], 'onestep_thr':[], 'shmulevich_thr':[]}
 final_df = pd.DataFrame(col_names)
@@ -313,28 +679,18 @@ app.layout = html.Div([
     html.Div([
                 html.H4('Binarize Genes Visualization'), 
         
-                html.Div(dash_table.DataTable(
-                    id='datatable-interactivity',
-                    columns=[
-                        {"name": i, "id": i} for i in df.columns
-                    ],
-                    data=df.to_dict('records'),
-                    column_selectable="single",
-                    row_selectable="multi",
-                    selected_columns=[],
-                    selected_rows=[],
-                    page_action="native",
-                    page_current= 0,
-                    page_size= 10,
-                )),
-                html.H5('Select option in order to show all the thresholds by each algorithm of each gene:'),
-                html.Div([
-                dcc.Dropdown(
-                            [{'label': 'Binarize All Genes', 'value':'all'}],
-                            placeholder="Select to binarize all genes and get thresholds",
-                            id="dropdown-binarize-all",
-                            searchable=False)
-                ], style={"width": "25%"}),
+                dcc.Store(id='stored-data', storage_type='session'),
+           
+                dcc.Upload(
+                    id='upload-data',
+                    children=html.Button("Upload Gene Expression File"),
+                    multiple=True
+                ),
+              
+                html.Div(id='output-data-upload'),
+            
+                html.Div(id='select-all-binarize', style={"width": "25%"}),
+               
                 html.Div(id='binarize-all'),
                 html.Hr()
                
@@ -343,7 +699,10 @@ app.layout = html.Div([
     
     html.Div([
         html.Div([html.Div(id='dropdown-methods', style={"width": "25%"}),
-                  html.Div(id='heatmap-binarize')
+                  html.Div(id='heatmap-binarize'),
+                  html.Div(id='interpolation-heatmap'),
+                  html.Div(id='rules-dropdown'),
+                  html.Img(id='graph_rules'),
                  ], style={'padding': 10, 'flex': 1}),
         html.Div([
             html.Div(id='select-gene-binarize', style={"width": "25%"}),
@@ -357,12 +716,94 @@ app.layout = html.Div([
 ])
 #, style={"width":"80%", "margin":"auto"}
 
+
+# function to parse the contents of thje selected file
+def parse_contents(contents, filename, date):
+    content_type, content_string = contents.split(',')
+
+    # decode the content
+    decoded = base64.b64decode(content_string)
+    
+    # if it is a csv then read it 
+    if 'csv' in filename:
+        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), header=None)
+
+        # return a new html div that has the file name and the datatable with selectable rows
+        return html.Div([
+           # name of file
+           html.H5(filename),
+            
+           # dash datatable of data with rows that can be selected
+           dash_table.DataTable(
+                        id='datatable-interactivity',
+                        columns=[
+                            {"name": str(i), "id": str(i)} for i in df.columns
+                        ],
+                        data=df.to_dict('records'),
+                        column_selectable="single",
+                        row_selectable="multi",
+                        selected_columns=[],
+                        selected_rows=[],
+                        page_action="native",
+                        page_current= 0,
+                        page_size= 10,
+                    ),
+            # store the read dataframe
+            dcc.Store(id='stored-data', data=df.to_dict('records')),
+            html.Hr(), 
+
+        ])
+    
+    else:
+        return "The file needs to be a csv."
+
+# this callout receives the contents of the file and outputs the component
+# output-data-upload
+@callback(Output('output-data-upload', 'children'),
+              Input('upload-data', 'contents'),
+              State('upload-data', 'filename'),
+              State('upload-data', 'last_modified'))
+# function parses and update the output of the selected dataset
+def update_output(list_of_contents, list_of_names, list_of_dates):
+    # if there is a selected file
+    if list_of_contents is not None:
+        # parse the content
+        children = [
+            parse_contents(c, n, d) for c, n, d in
+            zip(list_of_contents, list_of_names, list_of_dates)]
+        return children
+
+# callout to show the select all genes to binarize component
+# the input is the stored data
+@app.callback(
+    Output('select-all-binarize', 'children'),
+    Input('stored-data','data'),
+     prevent_initial_call=True)
+# function to show dropdowm to binarize all
+def select_all_binarize(data):
+    # if there is no data then return none
+    if not data:
+        return None
+    
+    # return the dropdown component to binarize all
+    return [html.H5('Select option in order to show all the thresholds by each algorithm of each gene:'),
+                dcc.Dropdown(
+                            [{'label': 'Binarize All Genes', 'value':'all'}],
+                            placeholder="Select to binarize all genes and get thresholds",
+                            id="dropdown-binarize-all",
+                            searchable=False)]
+
+
 @app.callback(
     Output('binarize-all', 'children'),
-    Input('dropdown-binarize-all', 'value'))
-def binarize_all(all_rows):
+    Input('dropdown-binarize-all', 'value'),
+    Input('stored-data','data'))
+def binarize_all(all_rows, data):
     if all_rows is None:
         return None
+    
+    df = pd.DataFrame(data)
+    
     genes = df.values
     rows = df.shape[0]
     
@@ -383,10 +824,10 @@ def binarize_all(all_rows):
 
 @callback(
     Output("download-dataframe-csv", "data"),
-    Input("btn_csv", "click"),
+    Input("btn_csv", "n_click"),
     prevent_initial_call=True,
 )
-def download_csv(click):
+def download_csv(n_click):
     return dcc.send_data_frame(final_df.to_csv, "thr.csv")
     
 @app.callback(
@@ -395,6 +836,7 @@ def download_csv(click):
 def display_selected_data(selected_rows):
     if not selected_rows:
         return None
+    
     return  [html.H5('Select binarization method to binarize selected rows and visualize:'), 
             dcc.Dropdown(
                 ['All','BASC A', 'K-Means', 'Onestep', 'Shmulevich'], 'All',
@@ -405,159 +847,70 @@ def display_selected_data(selected_rows):
 @app.callback(
     Output('heatmap-binarize', 'children'),
     Input('dropdown-method', 'value'),
-    Input('datatable-interactivity', 'selected_rows'), prevent_initial_call=True)
-def heatmap_binarize(selected_method, selected_rows):
+    Input('datatable-interactivity', 'selected_rows'), 
+    Input('stored-data','data'), 
+    prevent_initial_call=True)
+def heatmap_binarize(selected_method, selected_rows, data):
     if selected_rows is None:
         return None
     if selected_method is None:
         return None
+    if selected_method == 'All':
+        return None
     
-    #selected = df.iloc[selected_rows]
-    #gene = selected.values
-    #sizeGene = len(gene)
+    df = pd.DataFrame(data)
     
-    if(selected_method == "K-Means"):
-        binarize_vect = []
-        labels = []
-
-        for row in selected_rows:
+    binarize_vect = []
+    labels = []
+        
+    # for each row binarize
+    for row in selected_rows:
             selected = df.iloc[row]
             gene = selected.values
             sizeGene = len(gene)
             binarize = []
+            
+            # add gene label
             labels.append("Gene " + str(row+1))
-            thr = K_Means(gene)
+            
+            # get threshold of gene
+            if(selected_method == 'K-Means'):
+                thr = K_Means(gene)
+            elif(selected_method == 'BASC A'):
+                thr, _ = BASC_A(gene)
+            elif(selected_method == 'Onestep'):
+                thr = onestep(gene)
+            else:
+                thr = shmulevich(gene)
 
+            # binarize based on thr
             for j in range(sizeGene):
                 if(gene[j] <= thr):
                     binarize.append(0) 
                 else:
-                    binarize.append(1)     
-
+                    binarize.append(1) 
+                    
+            # add binarization to array
             binarize_vect.append(binarize) 
-            
-        selected = df.iloc[selected_rows]
-        genes = selected.values
         
-        data = go.Figure(data=go.Heatmap(
+    # get the selected rows values
+    selected = df.iloc[selected_rows]
+    genes = selected.values
+        
+    # create the figure heatmap with the genes, labels, and binarization
+    # also add title text to the graph and return the figure
+    data = go.Figure(data=go.Heatmap(
                     z=genes,
                     y = labels,
                     text=binarize_vect,
                     texttemplate="%{text}",
                     textfont={"size":20}))
-        data.update_layout(
+    data.update_layout(
             title={
-        'text': "Heatmap of Binarized Genes using K-Means",
+        'text': "Heatmap of Binarized Genes using " + selected_method,
             }
         ) 
-        return dcc.Graph(figure=data)
-        
-    elif(selected_method == "BASC A"):   
-        binarize_vect = []
-        labels = []
-
-        for row in selected_rows:
-            selected = df.iloc[row]
-            gene = selected.values
-            sizeGene = len(gene)
-            binarize = []
-            labels.append("Gene " + str(row+1))
-            thr, _ = BASC_A(gene)
-
-            for j in range(sizeGene):
-                if(gene[j] <= thr):
-                    binarize.append(0) 
-                else:
-                    binarize.append(1)     
-
-            binarize_vect.append(binarize) 
-            
-        selected = df.iloc[selected_rows]
-        genes = selected.values
-        
-        data = go.Figure(data=go.Heatmap(
-                    z=genes,
-                    y = labels,
-                    text=binarize_vect,
-                    texttemplate="%{text}",
-                    textfont={"size":20}))
-        data.update_layout(
-            title={
-        'text': "Heatmap of Binarized Genes using BASC A",
-            }
-        )
-        return dcc.Graph(figure=data)
-    
-    elif(selected_method == "Onestep"):
-        binarize_vect = []
-        labels = []
-
-        for row in selected_rows:
-            selected = df.iloc[row]
-            gene = selected.values
-            sizeGene = len(gene)
-            binarize = []
-            labels.append("Gene " + str(row+1))
-            thr = onestep(gene)
-
-            for j in range(sizeGene):
-                if(gene[j] <= thr):
-                    binarize.append(0) 
-                else:
-                    binarize.append(1)     
-
-            binarize_vect.append(binarize) 
-            
-        selected = df.iloc[selected_rows]
-        genes = selected.values
-        
-        data = go.Figure(data=go.Heatmap(
-                    z=genes,
-                    y = labels,
-                    text=binarize_vect,
-                    texttemplate="%{text}",
-                    textfont={"size":20}))
-        data.update_layout(
-            title={
-        'text': "Heatmap of Binarized Genes using Onestep",
-            }
-        )
-        return dcc.Graph(figure=data)
-    
-    elif(selected_method == "Shmulevich"):
-        binarize_vect = []
-        labels = []
-
-        for row in selected_rows:
-            selected = df.iloc[row]
-            gene = selected.values
-            sizeGene = len(gene)
-            binarize = []
-            labels.append("Gene " + str(row+1))
-            thr = shmulevich(gene)
-
-            for j in range(sizeGene):
-                if(gene[j] <= thr):
-                    binarize.append(0) 
-                else:
-                    binarize.append(1)     
-
-            binarize_vect.append(binarize) 
-            selected = df.iloc[selected_rows]
-            genes = selected.values
-
-            data = go.Figure(data=go.Heatmap(
-                        z=genes,
-                        y = labels,
-                        text=binarize_vect,
-                        texttemplate="%{text}",
-                        textfont={"size":20}))
-            data.update_layout(
-                title={
-            'text': "Heatmap of Binarized Genes using Shmulevich",
-                }
-            )
-            return dcc.Graph(figure=data)
+    return dcc.Graph(figure=data)
 
 @app.callback(
     Output('select-gene-binarize', 'children'),
@@ -567,7 +920,7 @@ def select_gene_binarize(selected_method, selected_rows):
     if selected_method is None:
         return None
 
-    if not selected_rows:
+    if selected_rows is None:
         return None
 
     return [html.H5('Select gene to visualize:'), dcc.Dropdown(
@@ -579,12 +932,17 @@ def select_gene_binarize(selected_method, selected_rows):
 @app.callback(
     Output('graph-gene-binarize', 'children'),
     Input('dropdown-method', 'value'),
-    Input('dropdown-selected-rows', 'value'), prevent_initial_call=True)
-def graph_gene_algorithm(selected_method, selected_gene):
-    if not selected_gene:
+    Input('dropdown-selected-rows', 'value'), 
+    Input('stored-data','data'),
+    prevent_initial_call=True)
+def graph_gene_algorithm(selected_method, selected_gene, data):
+    if selected_gene is None:
         return None
     
+    df = pd.DataFrame(data)
+    
     selected = df.iloc[selected_gene]
+    
     gene = selected.values
     sizeGene = len(gene)
     
@@ -671,18 +1029,6 @@ def graph_gene_algorithm(selected_method, selected_gene):
                                   mode="lines", name="Shmulevich Threshold"))
         data.add_trace(go.Scatter(x=np.arange(1,sizeGene+1), y=np.full(sizeGene, thrOnestep), line_dash="dash",
                                   mode="lines", name="Onestep Threshold"))
-        #data.add_hline(y=thrBasc, line_width=3, line_dash="dash", line_color="green")
-        #data.add_annotation(xref="paper", y=thrBasc, text="BASC A", showarrow=False)
-        
-        #data.add_hline(y=thrKmeans, line_width=3, line_dash="dash", line_color="red")
-        #data.add_annotation(xref="paper", y=thrKmeans, text="KMeans", showarrow=False)
-        
-        #data.add_hline(y=thrOnestep, line_width=3, line_dash="dash", line_color="orange")
-        #data.add_annotation(xref="paper", y=thrOnestep, text="OneStep", showarrow=False)
-        
-        #data.add_hline(y=thrShmu, line_width=3, line_dash="dash", line_color="purple")
-        #data.add_annotation(xref="paper", y=thrShmu, text="Shmulevich", showarrow=False)
-        
         data.update_layout(
             title={
         'text': "Threshold of Gene " + str(selected_gene+1) + " using all methods",
@@ -694,13 +1040,17 @@ def graph_gene_algorithm(selected_method, selected_gene):
 @app.callback(
     Output('select-basc-discontinuity', 'children'),
     Input('dropdown-method', 'value'),
-    Input('dropdown-selected-rows', 'value'), prevent_initial_call=True)
-def select_basc_discontinuity(selected_method, selected_gene):
+    Input('dropdown-selected-rows', 'value'), 
+     Input('stored-data','data'), 
+    prevent_initial_call=True)
+def select_basc_discontinuity(selected_method, selected_gene, data):
     if selected_method is None:
         return None
 
-    if not selected_gene:
+    if selected_gene is None:
         return None
+    
+    df = pd.DataFrame(data)
     
     if(selected_method == 'BASC A'):
     
@@ -721,15 +1071,19 @@ def select_basc_discontinuity(selected_method, selected_gene):
     Output('graph-gene-discontinuity', 'children'),
     Input('dropdown-selected-rows', 'value'),
     Input('dropdown-selected-discontinuity', 'value'), 
-    Input('dropdown-method', 'value'), prevent_initial_call=True)
-def graph_discontinuity(selected_gene, selected_discontinuity, method):
+    Input('dropdown-method', 'value'), 
+     Input('stored-data','data'), 
+    prevent_initial_call=True)
+def graph_discontinuity(selected_gene, selected_discontinuity, method, data):
     if selected_discontinuity is None:
         return None
 
-    if not selected_gene:
+    if selected_gene is None:
         return None
     if method != "BASC A":
         return None
+    
+    df = pd.DataFrame(data)
     
     selected = df.iloc[selected_gene]
     gene = np.sort(selected.values)
@@ -815,13 +1169,13 @@ def graph_discontinuity(selected_gene, selected_discontinuity, method):
     Input('dropdown-method', 'value'), 
     prevent_initial_call=True)
 def interpolation_dropdown(selected_row, selected_method):
-    if not selected_row:
+    if selected_row is None:
         return None
     if selected_method == 'All':
         return None
     return  [html.H5('Select tolerance for interpolation:'), 
             dcc.Dropdown(
-                [0.1, 0.01, 0.001, 0.0001, 0.00001], 0.1,
+                [0.1, 0.01, 0.001, 0.0001, 0.00001],
                 placeholder="Select tolerance",
                 id="dropdown-tolerance",
                 searchable=False)]
@@ -831,15 +1185,18 @@ def interpolation_dropdown(selected_row, selected_method):
     Output('interpolation-graph', 'children'),
     Input('dropdown-selected-rows', 'value'),
     Input('dropdown-method', 'value'),
-    Input('dropdown-tolerance', 'value'), 
+    Input('dropdown-tolerance', 'value'),
+    Input('stored-data','data'),
     prevent_initial_call=True)
-def interpolation_graph(selected_row, selected_method, tolerance):
-    if not selected_row:
+def interpolation_graph(selected_row, selected_method, tolerance, data):
+    if selected_row is None:
         return None
-    if not tolerance:
+    if tolerance is None:
         return None
-    if not selected_method:
+    if selected_method is None:
         return None
+    
+    df = pd.DataFrame(data)
     
     if(selected_method != 'All'):
         
@@ -873,8 +1230,8 @@ def interpolation_graph(selected_row, selected_method, tolerance):
         data.update_layout(
             title={
         'text': "Gene "+ str(selected_row+1) + 
-                                    " interpolation of sample size " + str(samples) 
-                                    + " and tolerance " + str(tolerance),
+                                    " Sample Size " + str(samples) 
+                                    + " " + selected_method
             }
         )
         return dcc.Graph(figure=data)
@@ -882,6 +1239,134 @@ def interpolation_graph(selected_row, selected_method, tolerance):
     else:
         return None
 
+@app.callback(
+    Output('interpolation-heatmap', 'children'),
+    Input('dropdown-selected-rows', 'value'),
+    Input('dropdown-method', 'value'), 
+    Input('stored-data','data'),
+    prevent_initial_call=True)
+def interpolation_heatmap(selected_row, method, data):
+    if selected_row is None:
+        return None
+    if method is None or method == 'All':
+        return None
+    
+    df = pd.DataFrame(data)
+    
+    selected = df.iloc[selected_row]
+    gene = selected.values
+    thr, sample = three_interpolation(gene , method)
+    sizeGene = len(gene)
+    inter = 1
+    binarize_vect = []
+    labels = []
+    
+    for i in range(len(thr)):
+        binarize = []
+        labels.append("Size " + str(sample[i]) + " Thr: " + str("{:.2f}".format(thr[i])))
+        inter += 1
+        
+        for j in range(sizeGene):
+                if(gene[j] <= thr[i]):
+                    binarize.append(0) 
+                else:
+                    binarize.append(1)     
+        binarize_vect.append(binarize) 
+        
+    genes = []
+    genes.append(gene)
+    genes.append(gene)
+    genes.append(gene)
+    
+    data2 = go.Figure(data=go.Heatmap(
+                        z=genes,
+                        y = labels,
+                        text=binarize_vect,
+                        texttemplate="%{text}",
+                        textfont={"size":20}))
+    data2.update_layout(
+                title={
+            'text': method + " Heatmap of Three Samples of Gene " + str(selected_row+1),
+                }
+            )
+    
+    return dcc.Graph(figure=data2)
+
+
+@app.callback(
+    Output('rules-dropdown', 'children'),
+    Input('datatable-interactivity', 'selected_rows'),
+    Input('dropdown-method', 'value'), 
+    prevent_initial_call=True)
+def rules_dropdown(selected_rows, selected_method):
+    if selected_rows is None:
+        return None
+    if selected_method is None:
+        return None
+    
+    if len(selected_rows) >= 3:
+        return [ html.H5('Select A rule is A = B:'), 
+                dcc.Dropdown(
+                options=[{'label': 'Gene ' + str(row+1), 'value': row} for row in selected_rows], 
+                placeholder="Select Gene A",
+                id="selected-A"),
+
+                html.H5('Select B rule is B = ~A:'),
+                dcc.Dropdown(
+                options=[{'label': 'Gene ' + str(row+1), 'value': row} for row in selected_rows], 
+                placeholder="Select Gene B",
+                id="selected-B"),
+
+                html.H5('Select C rule is C = A or B:'),
+                dcc.Dropdown(
+                options=[{'label': 'Gene ' + str(row+1), 'value': row} for row in selected_rows], 
+                placeholder="Select Gene C",
+                id="selected-C")]
+    else:
+        return None
+
+@app.callback(
+    Output('graph_rules', 'src'),
+    Input('selected-A', 'value'),
+    Input('selected-B', 'value'),
+    Input('selected-C', 'value'),
+    Input('dropdown-method', 'value'), 
+    Input('stored-data','data'),
+    prevent_initial_call=True)
+def process_rules(A, B, C, selected_method, data):
+    if A is None or B is None or C is None:
+        return None
+    if selected_method is None:
+        return None
+    
+    selected = [A, B, C]
+    
+    if(selected_method == 'All'):
+        fig = create_boolean_network_graph(selected, data)
+        
+        # Save it to a temporary buffer.
+        buf = BytesIO()
+        fig.savefig(buf, format="png")
+        # Embed the result in the html output.
+        fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+        fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
+
+        return fig_bar_matplotlib
+    
+    else:
+        fig = graph_three_interpolation_network(selected, selected_method, data)
+        
+        # Save it to a temporary buffer.
+        buf = BytesIO()
+        fig.savefig(buf, format="png")
+        # Embed the result in the html output.
+        fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+        fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
+
+        return fig_bar_matplotlib
+        
+    
+    return selected
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8004)
+    app.run_server(debug=False)
